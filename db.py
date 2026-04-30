@@ -10,7 +10,7 @@ def init_db():
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS analyses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            text TEXT,
+            raw_text TEXT,
             keywords TEXT,
             summary TEXT,
             ai_summary TEXT,
@@ -20,15 +20,18 @@ def init_db():
         """)
 
 
-def save_analysis(text, keywords, summary, ai_summary, questions):
+def save_analysis(raw_text, keywords, summary, ai_summary, questions):
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
 
+        # Щоб база не розросталась — можна обмежити текст
+        raw_text_limited = raw_text[:5000]
+
         cursor.execute("""
-        INSERT INTO analyses (text, keywords, summary, ai_summary, questions)
+        INSERT INTO analyses (raw_text, keywords, summary, ai_summary, questions)
         VALUES (?, ?, ?, ?, ?)
         """, (
-            text,
+            raw_text_limited,
             ", ".join(keywords),
             summary,
             ai_summary,
@@ -41,17 +44,21 @@ def get_history():
         cursor = conn.cursor()
 
         cursor.execute("""
-        SELECT id, text, keywords, summary, ai_summary, questions, created_at
+        SELECT id, raw_text, keywords, summary, ai_summary, questions, created_at
         FROM analyses
         ORDER BY created_at DESC
         """)
 
-        rows = cursor.fetchall()
-
-    return rows
+        return cursor.fetchall()
 
 
 def delete_analysis(analysis_id):
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM analyses WHERE id = ?", (analysis_id,))
+
+
+def clear_history():
+    with sqlite3.connect(DB_NAME) as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM analyses")
