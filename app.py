@@ -10,10 +10,7 @@ from ai_module import generate_summary, generate_questions, safe_generate
 from db import init_db, save_analysis, get_history, delete_analysis, clear_history
 import nltk
 
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+download_nltk_resources()
 
 # КОНФІГУРАЦІЯ
 st.set_page_config(page_title="AI Text Analyzer", layout="wide", initial_sidebar_state="expanded")
