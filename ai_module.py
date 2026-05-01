@@ -2,10 +2,11 @@ import os
 import time
 from dotenv import load_dotenv
 from groq import Groq
-
+import streamlit as st
 load_dotenv()
 
-API_KEY = os.getenv("GROQ_API_KEY")
+
+API_KEY = os.getenv("GROQ_API_KEY") or st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=API_KEY)
 
 MODEL_ID = "llama-3.3-70b-versatile"
