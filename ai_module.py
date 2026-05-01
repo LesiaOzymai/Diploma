@@ -6,13 +6,12 @@ from groq import Groq
 load_dotenv()
 
 API_KEY = os.getenv("GROQ_API_KEY")
-
 client = Groq(api_key=API_KEY)
 
 MODEL_ID = "llama-3.3-70b-versatile"
 
 
-def clean_json_response(text):
+def clean_json_response(text: str) -> str:
     text = text.strip()
 
     if "```json" in text:
@@ -38,10 +37,12 @@ def generate_summary(text, keywords):
     - Пояснюй просто
     - Відповідай українською
     """
-    # noinspection PyTypeChecker
+
     response = client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model=MODEL_ID,
+        temperature=0.7,
+        max_tokens=1024
     )
 
     return response.choices[0].message.content
@@ -49,38 +50,38 @@ def generate_summary(text, keywords):
 
 def generate_questions(text):
     prompt = f"""
-    Ти викладач.
-
-    Згенеруй 5 тестових питань по тексту.
+    Ти викладач. Згенеруй 5 тестових питань по тексту.
 
     ПОВЕРНИ ТІЛЬКИ JSON МАСИВ (без пояснень)
 
     Формат:
     [
       {{
-        "question": "Питання?",
-        "options": ["A", "B", "C", "D"],
-        "correct": "A"
+        "question": "Текст питання?",
+        "options": ["Варіант 1", "Варіант 2", "Варіант 3", "Варіант 4"],
+        "correct": "Варіант 1"
       }}
     ]
 
     Текст:
     {text}
     """
-    # noinspection PyTypeChecker
+
     response = client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model=MODEL_ID,
+        temperature=0.7,
+        max_tokens=1024
     )
 
     return clean_json_response(response.choices[0].message.content)
 
 
 def safe_generate(func, *args):
-    for _ in range(3):
+    for attempt in range(3):
         try:
             return func(*args)
-        except Exception:
+        except Exception as e:
+            print(f"[ERROR] Attempt {attempt+1}: {str(e)}")
             time.sleep(2)
-
     return None

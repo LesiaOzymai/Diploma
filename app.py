@@ -3,7 +3,7 @@ import json
 import random
 
 from parser import extract_text
-from preprocessing import clean_text
+from preprocessing import clean_text, split_into_chunks
 from keywords import extract_keywords
 from summarizer import summarize_text
 from ai_module import generate_summary, generate_questions, safe_generate
@@ -83,8 +83,8 @@ if mode == "Аналіз тексту":
         keywords = extract_keywords(clean)
         summary = summarize_text(clean)
 
-        MAX_CHARS = min(len(raw_text), 15000)
-        text_for_ai = raw_text[:MAX_CHARS]
+        chunks = split_into_chunks(raw_text, max_length=15000)
+        text_for_ai = chunks[0] if chunks else raw_text
 
         tab1, tab2 = st.tabs(["Класичний NLP", "AI Аналіз (Groq)"])
 
@@ -169,17 +169,20 @@ elif mode == "Навчання":
                     question_text = q.get('question', 'Питання')
                     st.markdown(f"**{i + 1}. {question_text}**")
 
-                    options = q.get("options", [])
+                    options = q.get("options", []).copy()
 
                     if options:
-                        # Захист від стрибання варіантів
                         r = random.Random(question_text)
                         r.shuffle(options)
 
                         safe_key = f"q_{i}_{question_text[:10]}"
 
-                        user_answers[i] = st.radio("Оберіть варіант", options, key=safe_key,
-                                                   label_visibility="collapsed")
+                        user_answers[i] = st.radio(
+                            "Оберіть варіант",
+                            options,
+                            key=safe_key,
+                            label_visibility="collapsed"
+                        )
                     else:
                         st.warning("Немає варіантів відповіді")
 
@@ -190,12 +193,13 @@ elif mode == "Навчання":
                 if submitted:
                     score = 0
                     for i, q in enumerate(questions_data):
-                        correct = q.get("correct", "")
-                        if user_answers.get(i) == correct:
+                        correct = str(q.get("correct", "")).strip().lower()
+                        user_ans = str(user_answers.get(i, "")).strip().lower()
+                        if user_ans == correct:
                             st.success(f"Питання {i + 1}: Правильно!")
                             score += 1
                         else:
-                            st.error(f"Питання {i + 1}: Помилка. Правильна відповідь: {correct}")
+                            st.error(f"Питання {i + 1}: Помилка. Правильна відповідь: {q.get('correct')}")
 
                     st.session_state.score = score
                     st.info(f"Твій результат: {score} з {len(questions_data)}")
@@ -246,8 +250,8 @@ elif mode == "Історія аналізів":
     history = get_history()
 
     if search:
-        history = [item for item in history if search in item[1].lower() or search in item[3].lower()]
-
+        history = [item for item in history if
+                   search in item[1].lower() or search in item[2].lower() or search in item[3].lower()]
     if not history:
         st.info("Немає збережених аналізів.")
     else:
