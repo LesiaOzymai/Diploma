@@ -3,7 +3,7 @@ from nltk.tokenize import sent_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import nltk
-nltk.download('punkt')
+
 
 def summarize_text(text, num_sentences=5):
     if not text or len(text.strip()) == 0:
