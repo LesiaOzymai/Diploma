@@ -5,11 +5,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 
 def summarize_text(text, num_sentences=5):
-    # Перевірка на пустий текст
     if not text or len(text.strip()) == 0:
         return "Текст відсутній для конспектування."
 
-    # розбиваємо текст на речення
     sentences = sent_tokenize(text)
 
     if len(sentences) <= num_sentences:
@@ -17,20 +15,15 @@ def summarize_text(text, num_sentences=5):
 
     sentences = [s for s in sentences if len(s.split()) > 6]
 
-    # TF-IDF для речень
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(sentences)
 
-    # обчислюємо "важливість" кожного речення
     sentence_scores = tfidf_matrix.sum(axis=1)
     sentence_scores = np.array(sentence_scores).flatten()
 
-    # беремо топ речення
     top_indices = sentence_scores.argsort()[-num_sentences:][::-1]
-
-    # сортуємо за порядком у тексті
     top_indices = sorted(top_indices)
 
-    summary = [sentences[i] for i in top_indices[:5]]
+    summary = [sentences[i] for i in top_indices]
 
     return " ".join(summary)

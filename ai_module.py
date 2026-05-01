@@ -12,6 +12,17 @@ client = Groq(api_key=API_KEY)
 MODEL_ID = "llama-3.3-70b-versatile"
 
 
+def clean_json_response(text):
+    text = text.strip()
+
+    if "```json" in text:
+        text = text.split("```json")[1].split("```")[0]
+    elif "```" in text:
+        text = text.split("```")[1].split("```")[0]
+
+    return text.strip()
+
+
 def generate_summary(text, keywords):
     prompt = f"""
     Ти — експерт з аналізу навчальних матеріалів.
@@ -25,10 +36,9 @@ def generate_summary(text, keywords):
     Завдання:
     - Створи структурований конспект (5-7 пунктів)
     - Пояснюй просто
-    - Ігноруй артефакти PDF
     - Відповідай українською
     """
-
+    # noinspection PyTypeChecker
     response = client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model=MODEL_ID,
@@ -41,30 +51,36 @@ def generate_questions(text):
     prompt = f"""
     Ти викладач.
 
+    Згенеруй 5 тестових питань по тексту.
+
+    ПОВЕРНИ ТІЛЬКИ JSON МАСИВ (без пояснень)
+
+    Формат:
+    [
+      {{
+        "question": "Питання?",
+        "options": ["A", "B", "C", "D"],
+        "correct": "A"
+      }}
+    ]
+
     Текст:
     {text}
-
-    Створи 5 тестових питань:
-    - 4 варіанти (A, B, C, D)
-    - тільки 1 правильний
-    - в кінці правильна відповідь
-    - українською мовою
     """
-
+    # noinspection PyTypeChecker
     response = client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model=MODEL_ID,
     )
 
-    return response.choices[0].message.content
+    return clean_json_response(response.choices[0].message.content)
 
 
 def safe_generate(func, *args):
-    for attempt in range(3):
+    for _ in range(3):
         try:
             return func(*args)
-        except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
+        except Exception:
             time.sleep(2)
 
-    return "Не вдалося отримати відповідь від ШІ."
+    return None
