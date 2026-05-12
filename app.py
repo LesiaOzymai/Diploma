@@ -417,9 +417,9 @@ elif mode == "Історія аналізів":
                         st.rerun()
                         # Видаляє запис із БД
 
-# ======================
+
 # ПЕРЕГЛЯД ОБРАНОГО АНАЛІЗУ
-# ======================
+
 if st.session_state.selected_analysis and mode == "Історія аналізів":
     # Відображає деталі обраного аналізу
     item = st.session_state.selected_analysis
